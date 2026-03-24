@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --green:        #1D9E75;
+  --green-light:  #E1F5EE;
+  --green-mid:    #9FE1CB;
+  --green-dark:   #0F6E56;
+  --green-deeper: #085041;
+
+  --blue:         #378ADD;
+  --blue-light:   #E6F1FB;
+  --blue-dark:    #185FA5;
+
+  --orange:       #D85A30;
+  --orange-light: #FAECE7;
+
+  --amber:        #EF9F27;
+  --amber-light:  #FAEEDA;
+
+  --red:          #E24B4A;
+  --red-light:    #FCEBEB;
+
+  --purple:       #7F77DD;
+  --purple-light: #EEEDFE;
+
+  --bg:        #F4F2ED;
+  --surface:   #FFFFFF;
+  --surface-2: #F0EDE6;
+  --surface-3: #E8E5DE;
+
+  --border:    rgba(0,0,0,0.08);
+  --border-md: rgba(0,0,0,0.13);
+  --border-lg: rgba(0,0,0,0.20);
+
+  --text:   #181816;
+  --text-2: #5A5955;
+  --text-3: #8A8880;
+
+  --radius-sm: 6px;
+  --radius:    10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow:    0 2px 8px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+
+  --nav-h:     52px;
+  --sidebar-w: 296px;
+
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+
+  --transition: 0.15s ease;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  height: 100%;
+}
+
+#root { height: 100%; display: flex; flex-direction: column; }
+
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--font); cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: var(--font); color: var(--text); }
+img { display: block; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-lg); }
+
+/* Utility */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }

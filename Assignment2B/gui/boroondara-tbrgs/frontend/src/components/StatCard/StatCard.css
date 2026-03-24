@@ -1,0 +1,46 @@
+.stat-card {
+  background: var(--surface-2);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card--small { padding: 10px 12px; }
+
+.stat-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text);
+  font-family: var(--mono);
+  line-height: 1.1;
+}
+.stat-card--small .stat-value { font-size: 20px; }
+
+.stat-unit {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--text-2);
+}
+
+.stat-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--sa, var(--green));
+  opacity: 0.7;
+}

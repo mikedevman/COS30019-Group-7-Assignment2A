@@ -1,0 +1,112 @@
+.map-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  background: #f4f2ed;
+}
+
+.gmap {
+  width: 100%;
+  height: 100%;
+  min-height: 180px;
+  z-index: 0;
+}
+
+/* Leaflet adds this class; ensure it fills the flex slot */
+.map-wrap .leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.map-loading,
+.map-error {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+.map-error { color: var(--red); }
+.map-error code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--red-light);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.map-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--border-md);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Legend */
+.map-legend {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: var(--surface);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--shadow-md);
+  min-width: 160px;
+}
+
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-align: left;
+}
+.legend-row:hover          { background: var(--surface-2); }
+.legend-row--active        { background: var(--surface-2); }
+
+.legend-swatch {
+  width: 20px;
+  height: 4px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legend-label {
+  font-size: 12px;
+  color: var(--text-2);
+  flex: 1;
+}
+.legend-time {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--mono);
+  color: var(--text);
+}
+.legend-best {
+  font-size: 10px;
+  font-weight: 500;
+  background: var(--green-light);
+  color: var(--green-dark);
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+
+/* InfoWindow */
+.info-win { padding: 2px 4px; }
+.info-id   { font-size: 10px; color: var(--text-3); font-family: var(--mono); margin-bottom: 2px; }
+.info-name { font-size: 13px; font-weight: 500; color: var(--text); }
