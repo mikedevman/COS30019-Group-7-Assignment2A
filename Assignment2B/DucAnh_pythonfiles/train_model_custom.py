@@ -8,7 +8,7 @@ import random
 import networkx as nx
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
-from data_preprocessing import (
+from data_preproc_custom import (
     load_data,
     reshape_data_sum,
     build_adjacency_matrix,
