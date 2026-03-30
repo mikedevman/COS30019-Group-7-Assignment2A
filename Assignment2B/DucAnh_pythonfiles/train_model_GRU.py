@@ -8,7 +8,7 @@ from tensorflow.keras.layers import GRU, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
 
 # Hàm từ file đã viết trước đó
-from data_preprocessing import load_data, reshape_data_sum, create_lstm_sequences
+from data_preproc_basic import load_data, reshape_data_sum, create_lstm_sequences
 
 def build_gru_model(input_shape):
 
