@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
 
 # def load_xlsx_file(xlsx_file):
 #     df = pd.read_excel(xlsx_file)
@@ -168,13 +169,16 @@ def perform_eda(df_long):
 
 
 if __name__ == "__main__":
-    file_path = '../data.csv'
-    
     print("Loading data...")
-    try:
-        data = load_data('data.csv')
-    except:
-        data = load_data('../data.csv')
+    data_paths = ['data/data.csv', 'Assignment2B/data/data.csv', '../data/data.csv']
+    data = None
+    for path in data_paths:
+        if os.path.exists(path):
+            print(f"Loading data from {path}")
+            data = load_data(path)
+            break
+    if data is None:
+        raise FileNotFoundError("Data file not found in any of the expected locations.")
         
     print(f"Shape of initial data (Wide Format): {data.shape}")
     

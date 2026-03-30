@@ -35,11 +35,16 @@ def build_lstm_model(input_shape):
 
 def main():
     print("1. Đang tải và tiền xử lý dữ liệu...")
-    try:
-        data = load_data('data.csv')
-    except:
-        data = load_data('../data.csv')
-        
+
+    # Xác định data.csv theo đường dẫn tuyệt đối để tránh lỗi khi chạy từ thư mục khác.
+    from pathlib import Path
+    script_dir = Path(__file__).resolve().parent
+    data_file = script_dir.parent / 'data' / 'data.csv'
+
+    if not data_file.exists():
+        raise FileNotFoundError(f"Không tìm thấy file data.csv tại {data_file}")
+
+    data = load_data(str(data_file))
     df_long = reshape_data_sum(data)
     
     # Dữ liệu LSTM phải được đem đi scale từ 0 đến 1 thì Neural Network mới hội tụ tốt.
