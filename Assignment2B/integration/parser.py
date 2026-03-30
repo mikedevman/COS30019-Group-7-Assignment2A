@@ -2,50 +2,42 @@ def parse_file(file_path):
     Nodes = {}
     Edges = {}
     Costs = {}
-    Origin = None
-    Destinations = []
-
+    
     mode = None
 
     with open(file_path, 'r') as file:
-        lines = file.readlines()
-
-        for line in lines:
-            line = line.strip() # remove trailing whitespace
-            if not line:
+        for line in file:
+            line = line.strip()
+            if not line or not any(c.isalnum() for c in line):
                 continue
-
-            # determine data type
-            if line == "Nodes:":
-                mode = "nodes" 
+            if "Nodes" in line:
+                mode = "nodes"
                 continue
-            elif line == "Edges:":
+            elif "Edges" in line:
                 mode = "edges"
                 continue
-            elif line == "Origin:":
-                mode = "origin"
-                continue
-            elif line == "Destinations:":
-                mode = "destinations"
+
+            parts = line.split()
+            
+            # Skip the metadata line (e.g., "50 150")
+            if len(parts) < 3:
                 continue
 
-            # parse
             if mode == "nodes":
-                node, coordinate = line.split(":")
-                node = int(node) 
-                coordinate = coordinate.strip("() ")
-                x, y = map(int, coordinate.split(","))
-                Nodes[node] = (x, y)
-                Edges[node] = [] # initialize the list of edges for the node
+                node_id = parts[0] 
+                longtitude = float(parts[1])
+                latitude = float(parts[2])
+                Nodes[node_id] = (longtitude, latitude)
+                Edges[node_id] = [] 
+                
             elif mode == "edges":
-                edge, cost = line.split(":")
-                edge = edge.strip("()")
-                start, end = map(int, edge.split(","))
-                Edges[start].append(end) # add the end node to the to the start node's list of edges
-                Costs[(start, end)] = int(cost) # store the cost for the edge
-            elif mode == "origin":
-                Origin = int(line)
-            elif mode == "destinations":
-                Destinations = list(map(int, line.split(";")))
+                # Handle space-separated edges: start end cost
+                start = parts[0]
+                end = parts[1]
+                cost = float(parts[2])
+                
+                if start not in Edges: Edges[start] = []
+                Edges[start].append(end)
+                Costs[(start, end)] = cost
 
-    return Nodes, Edges, Costs, Origin, Destinations
+    return Nodes, Edges, Costs, None, []

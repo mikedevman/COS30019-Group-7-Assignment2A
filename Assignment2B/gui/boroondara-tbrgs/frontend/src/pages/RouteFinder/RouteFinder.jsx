@@ -21,9 +21,41 @@ export default function RouteFinder() {
     setOrigin(params.origin);
     setDestination(params.destination);
     setSearched(true);
-    await new Promise(r => setTimeout(r, 350));
-    setRoutes(MOCK_ROUTES.slice(0, params.topK));
-    setLoading(false);
+    
+    try {
+      const res = await fetch('http://127.0.0.1:5001/api/route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          origin: params.origin,
+          destination: params.destination,
+          model: params.model || 'lstm',
+          topK: params.topK || 5
+        })
+      });
+
+      if (!res.ok) throw new Error('Backend failed to respond');
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      const parsedRoutes = data.routes.map((r, i) => ({
+        id: r.route.toString(),
+        best: i === 0,
+        duration: r.estimated_time_mins,
+        distance: '??',
+        intersections: Math.max(0, r.path.length - 2),
+        via: `Node ${r.path[1] || 'Unknown'}`,
+        path: r.path
+      }));
+
+      setRoutes(parsedRoutes);
+      if (parsedRoutes.length > 0) setSelectedRoute(parsedRoutes[0].id);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to fetch routes from AI backend.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
