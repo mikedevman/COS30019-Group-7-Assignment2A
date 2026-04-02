@@ -2,13 +2,13 @@ import { useState } from 'react';
 import Sidebar from '../../components/Sidebar/Sidebar';
 import MapView from '../../components/MapView/MapView';
 import RouteCard from '../../components/RouteCard/RouteCard';
-import { MOCK_ROUTES } from '../../utils/mockData';
+import { DEFAULTS } from '../../utils/constants';
 import './RouteFinder.css';
 
 export default function RouteFinder() {
   const [routes,        setRoutes]        = useState([]);
-  const [origin,        setOrigin]        = useState('2000');
-  const [destination,   setDestination]   = useState('3002');
+  const [origin,        setOrigin]        = useState(DEFAULTS.origin);
+  const [destination,   setDestination]   = useState(DEFAULTS.destination);
   const [loading,       setLoading]       = useState(false);
   const [selectedRoute, setSelectedRoute] = useState(null);
   const [error,         setError]         = useState(null);
@@ -30,7 +30,11 @@ export default function RouteFinder() {
           origin: params.origin,
           destination: params.destination,
           model: params.model || 'lstm',
-          topK: params.topK || 5
+          topK: params.topK || 5,
+          speedLimit: params.speedLimit || 60,
+          intersectionDelay: params.intersectionDelay ?? 30,
+          departTime: params.departTime || '08:30',
+          bidirectional: params.bidirectional || false,
         })
       });
 
@@ -38,15 +42,28 @@ export default function RouteFinder() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      const parsedRoutes = data.routes.map((r, i) => ({
-        id: r.route.toString(),
-        best: i === 0,
-        duration: r.estimated_time_mins,
-        distance: '??',
-        intersections: Math.max(0, r.path.length - 2),
-        via: `Node ${r.path[1] || 'Unknown'}`,
-        path: r.path
-      }));
+      const bestPath = data.routes[0]?.path || [];
+      const parsedRoutes = data.routes.map((r, i) => {
+        let diffNode = r.path[1];
+        if (i > 0) {
+          for (let j = 1; j < r.path.length; j++) {
+            if (r.path[j] !== bestPath[j]) {
+              diffNode = r.path[j];
+              break;
+            }
+          }
+        }
+        
+        return {
+          id: r.route.toString(),
+          best: i === 0,
+          duration: r.estimated_time_mins,
+          distance: r.distance_km ? `${r.distance_km} km` : 'N/A',
+          intersections: Math.max(0, r.path.length - 2),
+          via: `Node ${diffNode || 'Unknown'}`,
+          path: r.path
+        };
+      });
 
       setRoutes(parsedRoutes);
       if (parsedRoutes.length > 0) setSelectedRoute(parsedRoutes[0].id);

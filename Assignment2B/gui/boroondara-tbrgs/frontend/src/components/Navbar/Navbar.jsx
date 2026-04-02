@@ -4,8 +4,6 @@ import './Navbar.css';
 const NAV_ITEMS = [
   { to: '/',           label: 'Route Finder'     },
   { to: '/comparison', label: 'Model Comparison' },
-  { to: '/forecast',   label: 'Traffic Forecast' },
-  { to: '/settings',   label: 'Settings'         },
 ];
 
 export default function Navbar() {

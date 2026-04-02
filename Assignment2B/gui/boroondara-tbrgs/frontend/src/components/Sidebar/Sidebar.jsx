@@ -3,17 +3,29 @@ import { SCATS_SITES, ML_MODELS, DEFAULTS } from '../../utils/constants';
 import './Sidebar.css';
 
 export default function Sidebar({ onSearch, loading }) {
-  const [origin,      setOrigin]      = useState('2000');
-  const [destination, setDestination] = useState('3002');
+  const [origin,      setOrigin]      = useState(DEFAULTS.origin);
+  const [destination, setDestination] = useState(DEFAULTS.destination);
   const [model,       setModel]       = useState(DEFAULTS.model);
-  const [departTime,  setDepartTime]  = useState('08:30');
+  const [departTime,  setDepartTime]  = useState(DEFAULTS.departTime);
   const [topK,        setTopK]        = useState(DEFAULTS.topK);
+  const [speedLimit,  setSpeedLimit]  = useState(DEFAULTS.speedLimit);
+  const [intersectionDelay, setIntersectionDelay] = useState(DEFAULTS.intersectionDelay);
+  const [isbidirectional, setIsbidirectional] = useState(false);
 
   const canSearch = origin !== destination;
 
   const handleSubmit = () => {
     if (!canSearch || loading) return;
-    onSearch({ origin, destination, model, departTime, topK });
+    onSearch({
+      origin,
+      destination,
+      model,
+      departTime,
+      topK,
+      speedLimit,
+      intersectionDelay,
+      bidirectional: (model === 'lstm' || model === 'gru') ? isbidirectional : false,
+    });
   };
 
   const swap = () => {
@@ -69,13 +81,25 @@ export default function Sidebar({ onSearch, loading }) {
       <div className="sb-section">
         <p className="sb-label">Parameters</p>
         <div className="param-grid">
-          <div className="param-tile">
-            <span className="param-val">60 km/h</span>
-            <span className="param-key">Speed limit</span>
+          <div className="param-tile param-tile--input">
+            <input
+              type="number"
+              value={speedLimit}
+              onChange={e => setSpeedLimit(Number(e.target.value))}
+              className="param-input"
+              min="10" max="130" step="5"
+            />
+            <span className="param-key">Speed (km/h)</span>
           </div>
-          <div className="param-tile">
-            <span className="param-val">30 s</span>
-            <span className="param-key">Intersection delay</span>
+          <div className="param-tile param-tile--input">
+            <input
+              type="number"
+              value={intersectionDelay}
+              onChange={e => setIntersectionDelay(Number(e.target.value))}
+              className="param-input"
+              min="0" max="120" step="5"
+            />
+            <span className="param-key">Delay (s)</span>
           </div>
           <div className="param-tile param-tile--input">
             <input
@@ -107,7 +131,10 @@ export default function Sidebar({ onSearch, loading }) {
             <button
               key={m.id}
               className={`model-row${model === m.id ? ' model-row--active' : ''}`}
-              onClick={() => setModel(m.id)}
+              onClick={() => {
+                setModel(m.id);
+                if (m.id !== 'lstm' && m.id !== 'gru') setIsbidirectional(false);
+              }}
               style={{ '--mc': m.color }}
             >
               <span className="model-radio">
@@ -117,7 +144,31 @@ export default function Sidebar({ onSearch, loading }) {
                 <span className="model-name">{m.label}</span>
                 <span className="model-sub">{m.fullName}</span>
               </span>
-              <span className="model-rmse">RMSE {m.rmse}</span>
+
+              {(m.id === 'lstm' || m.id === 'gru') && model === m.id && (
+                <div className={`bidirectional-inline-toggle${isbidirectional ? ' bidirectional-inline-toggle--active' : ''}`}>
+                  <label className="bidirectional-upgrade-label" title={`Enabling this will switch to Bidirectional ${m.label}`}>
+                    <span className="bidirectional-upgrade-text">
+                      <span className="bidirectional-upgrade-title">Bidirectional</span>
+                    </span>
+                    <span className="bidirectional-switch-row">
+                      <input
+                        type="checkbox"
+                        checked={isbidirectional}
+                        onChange={e => {
+                          e.stopPropagation();
+                          setIsbidirectional(prev => !prev);
+                        }}
+                        disabled={loading}
+                      />
+                      <span className="bidirectional-switch-ui" aria-hidden="true" />
+                    </span>
+                  </label>
+                  <span className={`bidirectional-status${isbidirectional ? ' bidirectional-status--on' : ' bidirectional-status--off'}`}>
+                    {isbidirectional ? 'On' : 'Off'}
+                  </span>
+                </div>
+              )}
             </button>
           ))}
         </div>

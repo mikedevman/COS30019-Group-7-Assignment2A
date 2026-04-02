@@ -227,7 +227,7 @@ def perform_eda(df_long):
 if __name__ == "__main__":
     import os
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(base_dir, '../data.csv')
+    data_path = os.path.join(base_dir, '../data/SCATS_data.csv')
     
     print("Loading data...")
     data = load_data(data_path)
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     print(df_long.head())
     print(f"Hình dạng dữ liệu sau biến đổi: {df_long.shape}")
     
-    sequence_length = 96 
+    # sequence_length = 96 
     
     # Phục vụ để code cũ tránh báo lỗi (vì Test Main Script cũ bị xóa create_lstm_sequences)
     print("Vui lòng kích hoạt script train_gcn_lstm.py để kiểm tra module đồ thị (Graph Convolution)...")

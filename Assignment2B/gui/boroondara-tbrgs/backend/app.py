@@ -1,7 +1,22 @@
-import sys
 import os
+import sys
+import warnings
+import logging
+
+# Suppress ALL ML backend logging (TensorFlow, oneDNN, absl)
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+os.environ['ABSL_LOGGING_VERBOSITY'] = '-1'
+
+# Disable loggers and filter warnings specifically
+logging.getLogger('tensorflow').disabled = True
+warnings.filterwarnings('ignore', category=UserWarning, module='tensorflow')
+warnings.filterwarnings('ignore', message='.*TensorFlow GPU support is not available.*')
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from constants import DEFAULTS
+import traceback
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 # Navigate up from Assignment2B/gui/boroondara-tbrgs/backend to Assignment2B/
@@ -26,13 +41,31 @@ def calculate_route():
         
     origin_input = str(data['origin'])
     destination_input = str(data['destination'])
-    model_name = data.get('model', 'lstm').lower()
+    model_name = str(data.get('model', 'lstm')).lower()
+    is_bidirectional = bool(data.get('bidirectional', False))
+
+    # Normalise to explicit model names
+    if model_name == 'lstm' and is_bidirectional:
+        model_name = 'bidirectional_lstm'
+
+    elif model_name == 'gru' and is_bidirectional:
+        model_name = 'bidirectional_gru'
     
-    # MOCK OVERRIDE: The frontend UI requests SCATS node IDs (e.g., '2000') that do not naturally exist 
-    # in the smaller 50-node FID testing map matrix, crashing Yen's Algorithm with a KeyError. 
-    # We silently route using valid path IDs '7001' and '7015' instead.
-    origin = '7001'
-    destination = '7015'
+    elif model_name == 'custom_gcn_lstm':
+        model_name = 'custom_gcn_lstm'
+
+    supported_models = ['lstm', 'bidirectional_lstm', 'gru', 'bidirectional_gru', 'custom_gcn_lstm']
+    if model_name not in supported_models:
+        model_name = 'lstm'
+    
+    # Extract new front-end parameters with defaults
+    top_k = int(data.get('topK', DEFAULTS["topK"]))
+    speed_limit = float(data.get('speedLimit', DEFAULTS["speedLimit"]))
+    intersection_delay = float(data.get('intersectionDelay', DEFAULTS["intersectionDelay"]))
+    
+    # Use the actual origin and destination from the request
+    origin = origin_input
+    destination = destination_input
     map_path = os.path.join(assignment2b_dir, 'map_data', 'boroodara_tbrgs_map_coordinates.txt')
     
     try:
@@ -40,7 +73,15 @@ def calculate_route():
         os.chdir(assignment2b_dir)
         
         # run_tbrgs dynamically loads the ML model and calculates the top Yen's K Shortest Paths
-        routes = run_tbrgs(filename=map_path, origin=origin, destination=destination, model_name=model_name)
+        routes = run_tbrgs(
+            filename=map_path, 
+            origin=origin, 
+            destination=destination, 
+            model_name=model_name,
+            k_routes=top_k,
+            speed_limit=speed_limit,
+            intersection_delay=intersection_delay
+        )
         
         return jsonify({
             "status": "success",
@@ -50,6 +91,7 @@ def calculate_route():
             "routes": routes
         }), 200
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':

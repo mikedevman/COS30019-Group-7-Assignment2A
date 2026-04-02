@@ -1,5 +1,7 @@
+// docker run -t -p 5000:5000 -v "C:/Users/Admin/Documents/COS30019-Group-7-Assignment2/Assignment2B/gui/boroondara-tbrgs/backend/osrm:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/australia-260401.osrm
+
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from 'react-leaflet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MAP_CENTER,
   MAP_ZOOM,
@@ -17,15 +19,35 @@ function siteLatlng(id) {
   return s ? [s.lat, s.lng] : null;
 }
 
+async function fetchRoadPath(coords) {
+  const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(';');
+  const res = await fetch(
+    `http://localhost:5000/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
+  );
+  const data = await res.json();
+  if (!data.routes || !data.routes[0]) return coords;
+  return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+}
+
 export default function MapView({ routes = [], origin, destination, selectedRoute, onSelectRoute }) {
   const [activeMarker, setActiveMarker] = useState(null);
+  const [roadPaths, setRoadPaths] = useState([]);
+
   const tileUrl = OSM_TILE_URL.includes('{apikey}')
     ? OSM_TILE_URL.replace('{apikey}', encodeURIComponent(OSM_API_KEY))
     : OSM_TILE_URL;
 
-  const routePaths = routes.map(r =>
-    r.path.map(id => siteLatlng(id)).filter(Boolean)
-  );
+  useEffect(() => {
+    if (!routes.length) {
+      setRoadPaths([]);
+      return;
+    }
+    Promise.all(
+      routes.map(r =>
+        fetchRoadPath(r.path.map(id => siteLatlng(id)).filter(Boolean))
+      )
+    ).then(setRoadPaths);
+  }, [routes]);
 
   return (
     <div className="map-wrap">
@@ -43,7 +65,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
         />
 
         {/* Routes */}
-        {routePaths.map((path, i) => {
+        {roadPaths.map((path, i) => {
           const route = routes[i];
           const isSelected = selectedRoute === null || selectedRoute === route.id;
 
@@ -82,23 +104,28 @@ export default function MapView({ routes = [], origin, destination, selectedRout
                 weight: 2,
               }}
               eventHandlers={{
-                click: () => setActiveMarker(activeMarker === site.id ? null : site.id),
+                click: e => {
+                  setActiveMarker(prev => {
+                    const next = prev === site.id ? null : site.id;
+                    if (next === null) e?.target?.closePopup?.();
+                    else e?.target?.openPopup?.();
+                    return next;
+                  });
+                },
               }}
             >
-              {activeMarker === site.id && (
-                <Popup>
-                  <div>
-                    <p>SCATS {site.id}</p>
-                    <p>{site.name}</p>
-                  </div>
-                </Popup>
-              )}
+              <Popup>
+                <div>
+                  <p>SCATS {site.id}</p>
+                  <p>{site.name}</p>
+                </div>
+              </Popup>
             </CircleMarker>
           );
         })}
       </MapContainer>
 
-      {/* Keep your legend (unchanged) */}
+      {/* Legend */}
       {routes.length > 0 && (
         <div className="map-legend">
           {routes.map((r, i) => (
@@ -118,3 +145,4 @@ export default function MapView({ routes = [], origin, destination, selectedRout
     </div>
   );
 }
+

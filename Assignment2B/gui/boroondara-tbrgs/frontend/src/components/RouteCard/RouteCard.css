@@ -9,7 +9,7 @@
   cursor: pointer;
   text-align: left;
   transition: background var(--transition);
-  overflow: hidden;
+  overflow: visible;
   flex: 1;
   min-width: 0;
   padding: 0;
@@ -87,4 +87,63 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 2px;
+}
+
+.rc-hover-popup {
+  background: var(--surface);
+  border: 1px solid var(--border-lg);
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius);
+  padding: 12px 12px 10px;
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+
+.rc-hover-title {
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-family: var(--mono);
+  margin-bottom: 6px;
+}
+
+.rc-hover-list {
+  margin: 0;
+  padding-left: 18px;
+  max-height: 420px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--text-2);
+  font-size: 11.5px;
+}
+
+.rc-hover-list::-webkit-scrollbar {
+  width: 4px;
+}
+.rc-hover-list::-webkit-scrollbar-thumb {
+  background: var(--border-lg);
+  border-radius: 10px;
+}
+
+.rc-hover-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  min-width: 0;
+}
+
+.rc-hover-id {
+  font-family: var(--mono);
+  color: var(--text-3);
+}
+
+.rc-hover-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -27,7 +27,8 @@ def parse_file(file_path):
                 node_id = parts[0] 
                 longtitude = float(parts[1])
                 latitude = float(parts[2])
-                Nodes[node_id] = (longtitude, latitude)
+                # Nodes[node_id] = (longtitude, latitude)
+                Nodes[node_id] = (latitude, longtitude)
                 Edges[node_id] = [] 
                 
             elif mode == "edges":
