@@ -63,7 +63,11 @@ def calculate_route():
     speed_limit = float(data.get('speedLimit', DEFAULTS["speedLimit"]))
     intersection_delay = float(data.get('intersectionDelay', DEFAULTS["intersectionDelay"]))
     
-    # Use the actual origin and destination from the request
+    # Print request details to console
+    print(f"\n[POST /api/route] New Request")
+    print(f"  From SCATS: {origin_input} -> To SCATS: {destination_input}")
+    print(f"  Model: {model_name} | topK: {top_k} | Speed Limit: {speed_limit}km/h | Delay: {intersection_delay}s")
+
     origin = origin_input
     destination = destination_input
     map_path = os.path.join(assignment2b_dir, 'map_data', 'boroodara_tbrgs_map_coordinates.txt')
@@ -83,6 +87,13 @@ def calculate_route():
             intersection_delay=intersection_delay
         )
         
+        # Print results to console
+        print(f"  Found {len(routes)} routes:")
+        for r in routes:
+            nodes = len(r['path'])
+            print(f"    - Route {r['route']} | {r['estimated_time_mins']} min | {r['distance_km']} km | {nodes} nodes")
+        print("-" * 30)
+
         return jsonify({
             "status": "success",
             "origin": origin,

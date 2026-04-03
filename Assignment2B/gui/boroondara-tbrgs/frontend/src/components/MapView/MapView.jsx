@@ -21,9 +21,15 @@ function siteLatlng(id) {
 
 async function fetchRoadPath(coords) {
   const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(';');
+
+  // const res = await fetch(
+  // `http://localhost:5000/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
+  //  );
+
   const res = await fetch(
-    `http://localhost:5000/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
+  `https://altered-arab-operators-meaningful.trycloudflare.com/route/v1/driving/${coordStr}?overview=full&geometries=geojson`,
   );
+
   const data = await res.json();
   if (!data.routes || !data.routes[0]) return coords;
   return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
