@@ -41,9 +41,9 @@ export default function RouteCard({ route, index, selected, onSelect }) {
         </div>
         <div className="rc-time">{route.duration}<span className="rc-unit"> min</span></div>
         <div className="rc-meta">
-          <span>{route.distance} km</span>
+          <span>{route.distance}</span>
           <span className="rc-dot" />
-          <span>{route.intersections} stops</span>
+          <span>{route.intersections + 2} stops</span>  {/* +2 for start and end sites */}
         </div>
       </div>
 

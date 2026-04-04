@@ -1,4 +1,8 @@
-// docker run -t -p 5000:5000 -v "C:/Users/Admin/Documents/COS30019-Group-7-Assignment2/Assignment2B/gui/boroondara-tbrgs/backend/osrm:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/australia-260401.osrm
+// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-extract -p /opt/car.lua /data/australia-260401.osm.pbf
+// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-partition /data/australia-260401.osrm
+// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-customize /data/australia-260401.osrm
+
+// docker run -t -p 5000:5000 -v "C:/Users/Admin/Documents/OSRM:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/australia-260401.osrm
 
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from 'react-leaflet';
 import { useState, useEffect } from 'react';
@@ -21,14 +25,22 @@ function siteLatlng(id) {
 
 async function fetchRoadPath(coords) {
   const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(';');
+  
+  let res;
 
-  // const res = await fetch(
-  // `http://localhost:5000/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
-  //  );
+  try {
+    res = await fetch(
+      `http://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
+    );
 
-  const res = await fetch(
-  `https://altered-arab-operators-meaningful.trycloudflare.com/route/v1/driving/${coordStr}?overview=full&geometries=geojson`,
-  );
+    if (!res.ok) throw new Error("Public OSRM failed");
+  } catch (err) {
+    console.log("Falling back to ");
+  
+    res = await fetch(
+      `http://localhost:5000/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
+    );
+  }
 
   const data = await res.json();
   if (!data.routes || !data.routes[0]) return coords;
@@ -73,6 +85,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
         {/* Routes */}
         {roadPaths.map((path, i) => {
           const route = routes[i];
+          if (!route) return null;
           const isSelected = selectedRoute === null || selectedRoute === route.id;
 
           return (

@@ -109,9 +109,14 @@ export default function RouteFinder() {
               {[1,2,3,4,5].map(i => <div key={i} className="route-skeleton" />)}
             </div>
           )}
-          {!loading && routes.length === 0 && searched && (
+
+          {!loading && routes.length === 0 && searched && !error && (
             <div className="routes-none">No routes found between these intersections.</div>
           )}
+          {!loading && routes.length === 0 && searched && error && (
+            <div className="routes-none">{error}</div>
+          )}
+
           {!loading && routes.map((r, i) => (
             <RouteCard
               key={r.id}
