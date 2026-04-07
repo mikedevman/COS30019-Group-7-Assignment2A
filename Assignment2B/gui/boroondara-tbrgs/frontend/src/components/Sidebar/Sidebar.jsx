@@ -8,22 +8,57 @@ export default function Sidebar({ onSearch, loading }) {
   const [model,       setModel]       = useState(DEFAULTS.model);
   const [departTime,  setDepartTime]  = useState(DEFAULTS.departTime);
   const [topK,        setTopK]        = useState(DEFAULTS.topK);
-  const [speedLimit,  setSpeedLimit]  = useState(DEFAULTS.speedLimit);
-  const [intersectionDelay, setIntersectionDelay] = useState(DEFAULTS.intersectionDelay);
+  const [speedLimit,  setSpeedLimit]  = useState(DEFAULTS.speedLimit.toString());
+  const [intersectionDelay, setIntersectionDelay] = useState(DEFAULTS.intersectionDelay.toString());
   const [isbidirectional, setIsbidirectional] = useState(false);
+  const [speedError, setSpeedError] = useState('');
+  const [delayError, setDelayError] = useState('');
 
   const canSearch = origin !== destination;
 
+  const validateParams = () => {
+    let isValid = true;
+    setSpeedError('');
+    setDelayError('');
+
+    const speed = Number(speedLimit);
+    const delay = Number(intersectionDelay);
+
+    if (!Number.isFinite(speed) || speedLimit.trim() === '') {
+      setSpeedError('Speed must be a valid number');
+      isValid = false;
+    } else if (speed < 10 || speed > 130) {
+      setSpeedError('Speed must be between 10 and 130 km/h');
+      isValid = false;
+    }
+
+    if (!Number.isFinite(delay) || intersectionDelay.trim() === '') {
+      setDelayError('Delay must be a valid number');
+      isValid = false;
+    } else if (delay < 0 || delay > 120) {
+      setDelayError('Delay must be between 0 and 120 seconds');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = () => {
     if (!canSearch || loading) return;
+
+    if (!validateParams()) return;
+
+    const speed = Number(speedLimit);
+    const delay = Number(intersectionDelay);
+
     onSearch({
       origin,
       destination,
       model,
       departTime,
       topK,
-      speedLimit,
-      intersectionDelay,
+      speedLimit: speed,
+      intersectionDelay: delay,
       bidirectional: (model === 'lstm' || model === 'gru') ? isbidirectional : false,
     });
   };
@@ -81,25 +116,33 @@ export default function Sidebar({ onSearch, loading }) {
       <div className="sb-section">
         <p className="sb-label">Parameters</p>
         <div className="param-grid">
-          <div className="param-tile param-tile--input">
+          <div className={`param-tile param-tile--input${speedError ? ' param-tile--error' : ''}`}>
             <input
               type="number"
               value={speedLimit}
-              onChange={e => setSpeedLimit(Number(e.target.value))}
+              onChange={e => {
+                setSpeedLimit(e.target.value);
+                setSpeedError('');
+              }}
               className="param-input"
               min="10" max="130" step="5"
             />
             <span className="param-key">Speed (km/h)</span>
+            {speedError && <span className="param-error">{speedError}</span>}
           </div>
-          <div className="param-tile param-tile--input">
+          <div className={`param-tile param-tile--input${delayError ? ' param-tile--error' : ''}`}>
             <input
               type="number"
               value={intersectionDelay}
-              onChange={e => setIntersectionDelay(Number(e.target.value))}
+              onChange={e => {
+                setIntersectionDelay(e.target.value);
+                setDelayError('');
+              }}
               className="param-input"
               min="0" max="120" step="5"
             />
             <span className="param-key">Delay (s)</span>
+            {delayError && <span className="param-error">{delayError}</span>}
           </div>
           <div className="param-tile param-tile--input">
             <input

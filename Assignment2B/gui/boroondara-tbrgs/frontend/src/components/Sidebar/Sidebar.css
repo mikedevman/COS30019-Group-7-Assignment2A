@@ -123,10 +123,13 @@
   flex-direction: column;
   gap: 3px;
   border: 0.5px solid var(--border);
+  transition: border-color var(--transition), background var(--transition);
 }
 .param-tile--input { background: var(--surface); border-color: var(--border-md); }
+.param-tile--error { border-color: var(--red); background: color-mix(in srgb, var(--red) 8%, var(--surface)); }
 .param-val  { font-size: 15px; font-weight: 500; color: var(--text); font-family: var(--mono); }
 .param-key  { font-size: 10px; color: var(--text-3); }
+.param-error { font-size: 9px; color: var(--red); font-weight: 500; letter-spacing: 0.02em; margin-top: 2px; }
 .param-input {
   width: 100%;
   font-size: 13px;
@@ -138,6 +141,17 @@
   color: var(--text);
   padding: 0;
   cursor: pointer;
+}
+.param-input:focus {
+  outline: none;
+}
+.param-input::-webkit-outer-spin-button,
+.param-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.param-input[type='time'] {
+  padding-top: 2px;
 }
 
 /* Models */
@@ -167,16 +181,20 @@
   height: 14px;
   border-radius: 50%;
   border: 1.5px solid var(--border-lg);
+  background: transparent;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: border-color var(--transition);
+  transition: border-color var(--transition), background var(--transition);
 }
-.model-row--active .model-radio { border-color: var(--mc); }
+.model-row--active .model-radio {
+  border-color: var(--mc);
+}
 .model-radio-inner {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--mc);
 }
@@ -186,7 +204,6 @@
 .model-sub  { font-size: 11px; color: var(--text-3); }
 
 .bidirectional-inline-toggle {
-  margin-top: 12px;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 5px;

@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import warnings
 import logging
 
@@ -77,6 +78,7 @@ def calculate_route():
         os.chdir(assignment2b_dir)
         
         # run_tbrgs dynamically loads the ML model and calculates the top Yen's K Shortest Paths
+        start_time = time.perf_counter()
         routes = run_tbrgs(
             filename=map_path, 
             origin=origin, 
@@ -86,9 +88,10 @@ def calculate_route():
             speed_limit=speed_limit,
             intersection_delay=intersection_delay
         )
+        elapsed_time = time.perf_counter() - start_time
         
         # Print results to console
-        print(f"  Found {len(routes)} routes:")
+        print(f"  Found {len(routes)} routes in {elapsed_time:.3f}s:")
         for r in routes:
             nodes = len(r['path'])
             print(f"    - Route {r['route']} | {r['estimated_time_mins']} min | {r['distance_km']} km | {nodes} nodes")
@@ -99,6 +102,7 @@ def calculate_route():
             "origin": origin,
             "destination": destination,
             "model": model_name,
+            "findingTimeSeconds": round(elapsed_time, 3),
             "routes": routes
         }), 200
     except Exception as e:

@@ -1,9 +1,3 @@
-// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-extract -p /opt/car.lua /data/australia-260401.osm.pbf
-// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-partition /data/australia-260401.osrm
-// docker run -t -v C:\Users\Admin\Documents\OSRM:/data osrm/osrm-backend osrm-customize /data/australia-260401.osrm
-
-// docker run -t -p 5000:5000 -v "C:/Users/Admin/Documents/OSRM:/data" osrm/osrm-backend osrm-routed --algorithm mld /data/australia-260401.osrm
-
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup } from 'react-leaflet';
 import { useState, useEffect } from 'react';
 import {

@@ -39,6 +39,7 @@ export default function RouteFinder() {
       });
 
       if (!res.ok) throw new Error('Backend failed to respond');
+
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
@@ -67,9 +68,19 @@ export default function RouteFinder() {
 
       setRoutes(parsedRoutes);
       if (parsedRoutes.length > 0) setSelectedRoute(parsedRoutes[0].id);
+
     } catch (err) {
       console.error(err);
-      setError("Failed to fetch routes from AI backend.");
+
+      let message = "Failed to fetch routes.";
+
+      if (err.message === "Failed to fetch") {
+        message += " Cannot connect to backend.";
+      } else {
+        message += " " + err.message;
+      }
+
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -113,6 +124,7 @@ export default function RouteFinder() {
           {!loading && routes.length === 0 && searched && !error && (
             <div className="routes-none">No routes found between these intersections.</div>
           )}
+
           {!loading && routes.length === 0 && searched && error && (
             <div className="routes-none">{error}</div>
           )}
