@@ -1,3 +1,2 @@
 __pycache__/
-data/preprocessed/
-osrm/
+**/data/preprocessed/*.pkl

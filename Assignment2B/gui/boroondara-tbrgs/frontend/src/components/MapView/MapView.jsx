@@ -13,22 +13,26 @@ import 'leaflet/dist/leaflet.css';
 import './MapView.css';
 
 function siteLatlng(id) {
+  // Look up latitude/longitude for a SCATS site id
   const s = SCATS_SITES.find(x => x.id === id);
   return s ? [s.lat, s.lng] : null;
 }
 
 async function fetchRoadPath(coords) {
+  // Fetch snapped road geometry for a sequence of waypoints via OSRM
   const coordStr = coords.map(([lat, lng]) => `${lng},${lat}`).join(';');
   
   let res;
 
   try {
+    // Try public OSRM first for routing geometry
     res = await fetch(
       `http://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`
     );
 
     if (!res.ok) throw new Error("Public OSRM failed");
   } catch (err) {
+    // Fall back to local OSRM instance if public endpoint fails
     console.log("Falling back to ");
   
     res = await fetch(
@@ -36,20 +40,24 @@ async function fetchRoadPath(coords) {
     );
   }
 
+  // Convert OSRM GeoJSON coords into Leaflet-friendly [lat, lng] pairs
   const data = await res.json();
   if (!data.routes || !data.routes[0]) return coords;
   return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
 }
 
 export default function MapView({ routes = [], origin, destination, selectedRoute, onSelectRoute }) {
+  // Track marker selection and resolved road geometries for each route
   const [activeMarker, setActiveMarker] = useState(null);
   const [roadPaths, setRoadPaths] = useState([]);
 
+  // Build tile URL with API key substitution if required
   const tileUrl = OSM_TILE_URL.includes('{apikey}')
     ? OSM_TILE_URL.replace('{apikey}', encodeURIComponent(OSM_API_KEY))
     : OSM_TILE_URL;
 
   useEffect(() => {
+    // Recompute road geometry paths whenever the route list changes
     if (!routes.length) {
       setRoadPaths([]);
       return;
@@ -63,6 +71,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
 
   return (
     <div className="map-wrap">
+      {/* Main Leaflet map container */}
       <MapContainer
         center={[MAP_CENTER.lat, MAP_CENTER.lng]}
         zoom={MAP_ZOOM}
@@ -83,6 +92,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
           const isSelected = selectedRoute === null || selectedRoute === route.id;
 
           return (
+            // Route polyline with click-to-select behaviour
             <Polyline
               key={route.id}
               positions={path}
@@ -103,9 +113,11 @@ export default function MapView({ routes = [], origin, destination, selectedRout
           const isOrigin = site.id === origin;
           const isDest = site.id === destination;
 
+          // Only render markers that are origin/destination or appear in any displayed route
           if (!isOrigin && !isDest && !routes.some(r => r.path.includes(site.id))) return null;
 
           return (
+            // Marker for each relevant SCATS site with popup on click
             <CircleMarker
               key={site.id}
               center={[site.lat, site.lng]}
@@ -118,6 +130,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
               }}
               eventHandlers={{
                 click: e => {
+                  // Toggle popup open/closed while tracking the active marker id
                   setActiveMarker(prev => {
                     const next = prev === site.id ? null : site.id;
                     if (next === null) e?.target?.closePopup?.();
@@ -142,6 +155,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
       {routes.length > 0 && (
         <div className="map-legend">
           {routes.map((r, i) => (
+            // Legend row that mirrors route colors and supports selection
             <button
               key={r.id}
               className={`legend-row${selectedRoute === r.id ? ' legend-row--active' : ''}`}

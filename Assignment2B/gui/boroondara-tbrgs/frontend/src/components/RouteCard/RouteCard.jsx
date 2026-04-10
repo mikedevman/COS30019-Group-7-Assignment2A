@@ -4,19 +4,23 @@ import { ROUTE_COLORS, SCATS_SITES } from '../../utils/constants';
 import './RouteCard.css';
 
 function siteName(id) {
+  // Convert SCATS site id to readable display name
   const s = SCATS_SITES.find(x => x.id === id);
   return s ? s.name : id;
 }
 
 export default function RouteCard({ route, index, selected, onSelect }) {
+  // Derive route color and nodes list from inputs
   const color = ROUTE_COLORS[index % ROUTE_COLORS.length];
   const nodes = Array.isArray(route?.path) ? route.path : [];
   
+  // Track hover state and popup anchor position for tooltip rendering
   const [isHovered, setIsHovered] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
   const cardRef = useRef(null);
 
   const handleMouseEnter = () => {
+    // Measure card position so the hover popup can align above it
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       setPos({ top: rect.top, left: rect.left, width: rect.width });
@@ -25,6 +29,7 @@ export default function RouteCard({ route, index, selected, onSelect }) {
   };
 
   return (
+    // Clickable route summary card with optional hover popup
     <button
       ref={cardRef}
       className={`route-card${selected ? ' route-card--selected' : ''}${route.best ? ' route-card--best' : ''}`}
@@ -48,6 +53,7 @@ export default function RouteCard({ route, index, selected, onSelect }) {
       </div>
 
       {isHovered && nodes.length > 0 && createPortal(
+        // Render hover tooltip into body to avoid overflow clipping
         <div 
           className="rc-hover-popup" 
           role="tooltip" 

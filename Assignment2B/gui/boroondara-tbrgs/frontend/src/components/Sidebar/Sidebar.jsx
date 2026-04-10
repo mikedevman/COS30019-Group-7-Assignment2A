@@ -3,6 +3,7 @@ import { SCATS_SITES, ML_MODELS, DEFAULTS } from '../../utils/constants';
 import './Sidebar.css';
 
 export default function Sidebar({ onSearch, loading }) {
+  // Local UI state for journey inputs, model selection, and parameter validation
   const [origin,      setOrigin]      = useState(DEFAULTS.origin);
   const [destination, setDestination] = useState(DEFAULTS.destination);
   const [model,       setModel]       = useState(DEFAULTS.model);
@@ -14,9 +15,11 @@ export default function Sidebar({ onSearch, loading }) {
   const [speedError, setSpeedError] = useState('');
   const [delayError, setDelayError] = useState('');
 
+  // Derived guard to prevent invalid searches
   const canSearch = origin !== destination;
 
   const validateParams = () => {
+    // Validate numeric inputs and set inline error messages
     let isValid = true;
     setSpeedError('');
     setDelayError('');
@@ -44,6 +47,7 @@ export default function Sidebar({ onSearch, loading }) {
   };
 
   const handleSubmit = () => {
+    // Submit route search payload to parent container when inputs are valid
     if (!canSearch || loading) return;
 
     if (!validateParams()) return;
@@ -64,6 +68,7 @@ export default function Sidebar({ onSearch, loading }) {
   };
 
   const swap = () => {
+    // Swap origin and destination selections
     setOrigin(destination);
     setDestination(origin);
   };
@@ -121,6 +126,7 @@ export default function Sidebar({ onSearch, loading }) {
               type="number"
               value={speedLimit}
               onChange={e => {
+                // Update speed limit while clearing any prior validation error
                 setSpeedLimit(e.target.value);
                 setSpeedError('');
               }}
@@ -135,6 +141,7 @@ export default function Sidebar({ onSearch, loading }) {
               type="number"
               value={intersectionDelay}
               onChange={e => {
+                // Update intersection delay while clearing any prior validation error
                 setIntersectionDelay(e.target.value);
                 setDelayError('');
               }}
@@ -175,6 +182,7 @@ export default function Sidebar({ onSearch, loading }) {
               key={m.id}
               className={`model-row${model === m.id ? ' model-row--active' : ''}`}
               onClick={() => {
+                // Select model and reset bidirectional toggle for unsupported models
                 setModel(m.id);
                 if (m.id !== 'lstm' && m.id !== 'gru') setIsbidirectional(false);
               }}
@@ -199,6 +207,7 @@ export default function Sidebar({ onSearch, loading }) {
                         type="checkbox"
                         checked={isbidirectional}
                         onChange={e => {
+                          // Prevent row click handling and toggle bidirectional flag
                           e.stopPropagation();
                           setIsbidirectional(prev => !prev);
                         }}

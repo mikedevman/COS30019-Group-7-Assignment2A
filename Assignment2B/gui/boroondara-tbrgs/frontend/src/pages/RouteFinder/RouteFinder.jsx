@@ -6,6 +6,7 @@ import { DEFAULTS } from '../../utils/constants';
 import './RouteFinder.css';
 
 export default function RouteFinder() {
+  // Page state for current routes, selections, and request lifecycle
   const [routes,        setRoutes]        = useState([]);
   const [origin,        setOrigin]        = useState(DEFAULTS.origin);
   const [destination,   setDestination]   = useState(DEFAULTS.destination);
@@ -15,6 +16,7 @@ export default function RouteFinder() {
   const [searched,      setSearched]      = useState(false);
 
   const handleSearch = async (params) => {
+    // Submit a route-search request to the backend and map response into UI-friendly objects
     setLoading(true);
     setError(null);
     setSelectedRoute(null);
@@ -23,6 +25,7 @@ export default function RouteFinder() {
     setSearched(true);
     
     try {
+      // Call backend API with selected journey, model, and parameter inputs
       const res = await fetch('http://127.0.0.1:5001/api/route', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -38,11 +41,14 @@ export default function RouteFinder() {
         })
       });
 
+      // Convert non-2xx responses into a user-visible error
       if (!res.ok) throw new Error('Backend failed to respond');
 
+      // Parse backend payload and surface backend-side error field
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
+      // Determine divergence point from best path to compute a simple "via" label
       const bestPath = data.routes[0]?.path || [];
       const parsedRoutes = data.routes.map((r, i) => {
         let diffNode = r.path[1];
@@ -55,6 +61,7 @@ export default function RouteFinder() {
           }
         }
         
+        // Normalise backend route shape into components used by MapView and RouteCard
         return {
           id: r.route.toString(),
           best: i === 0,
@@ -66,10 +73,12 @@ export default function RouteFinder() {
         };
       });
 
+      // Update route list and default-select the first (fastest) route
       setRoutes(parsedRoutes);
       if (parsedRoutes.length > 0) setSelectedRoute(parsedRoutes[0].id);
 
     } catch (err) {
+      // Map fetch errors into a readable message for the routes strip
       console.error(err);
 
       let message = "Failed to fetch routes.";
@@ -82,11 +91,13 @@ export default function RouteFinder() {
 
       setError(message);
     } finally {
+      // Always clear loading flag once request completes
       setLoading(false);
     }
   };
 
   return (
+    // Two-column layout: sidebar controls + main map and route strip
     <div className="rf-layout">
       <Sidebar onSearch={handleSearch} loading={loading} />
 
@@ -101,6 +112,7 @@ export default function RouteFinder() {
             onSelectRoute={setSelectedRoute}
           />
           {!searched && (
+            // Onboarding hint shown until the first search is performed
             <div className="map-hint">
               <div className="hint-box">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -116,20 +128,24 @@ export default function RouteFinder() {
         {/* Route strip */}
         <div className={`rf-routes${routes.length === 0 ? ' rf-routes--empty' : ''}`}>
           {loading && (
+            // Loading skeletons while backend request is in flight
             <div className="routes-loading">
               {[1,2,3,4,5].map(i => <div key={i} className="route-skeleton" />)}
             </div>
           )}
 
           {!loading && routes.length === 0 && searched && !error && (
+            // Empty-state message when search succeeds but no routes are returned
             <div className="routes-none">No routes found between these intersections.</div>
           )}
 
           {!loading && routes.length === 0 && searched && error && (
+            // Error message when backend request fails or returns an error
             <div className="routes-none">{error}</div>
           )}
 
           {!loading && routes.map((r, i) => (
+            // Route cards allow selecting a specific route for emphasis on the map
             <RouteCard
               key={r.id}
               route={r}
