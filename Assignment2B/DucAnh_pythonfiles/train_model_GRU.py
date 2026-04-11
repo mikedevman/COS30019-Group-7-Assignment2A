@@ -45,7 +45,7 @@ def mean_absolute_percentage_error(y_true, y_pred):
 def main():
     print("1. Đang tải và tiền xử lý dữ liệu...")
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(base_dir, '../data.csv')
+    data_path = os.path.join(base_dir, '../data/SCATS_data.csv')
     data = load_data(data_path)
         
     df_long = reshape_data_sum(data)

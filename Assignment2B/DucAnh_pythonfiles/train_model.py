@@ -48,7 +48,7 @@ def main():
     # Xác định data.csv theo đường dẫn tuyệt đối để tránh lỗi khi chạy từ thư mục khác.
     from pathlib import Path
     script_dir = Path(__file__).resolve().parent
-    data_file = script_dir.parent / 'data' / 'data.csv'
+    data_file = script_dir.parent / 'data' / 'SCATS_data.csv'
 
     if not data_file.exists():
         raise FileNotFoundError(f"Không tìm thấy file data.csv tại {data_file}")
