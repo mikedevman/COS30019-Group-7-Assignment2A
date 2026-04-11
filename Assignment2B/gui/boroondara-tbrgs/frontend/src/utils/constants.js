@@ -42,6 +42,13 @@ export const SCATS_SITES = [
   { id: '4821', name: 'Victoria St / Burnley St', lat: -37.8114275, lng: 145.0098214 }, // was -37.81285, 145.00849
 ];
 
+// Supported prediction models and their display/metric metadata
+export const ML_MODELS = [
+  { id: 'lstm', label: 'LSTM', fullName: 'Long Short-Term Memory', color: '#1D9E75'},
+  { id: 'gru', label: 'GRU', fullName: 'Gated Recurrent Unit', color: '#378ADD' },
+  { id: 'custom_gcn_lstm', label: 'GCN-LSTM (Custom)', fullName: 'Graph Convolutional Network-Long Short-Term Memory', color: '#D85A30'},
+];
+
 // Palette used to differentiate multiple routes across map and cards
 export const ROUTE_COLORS = ['#1D9E75', '#378ADD', '#D85A30', '#EF9F27', '#7F77DD'];
 

@@ -1,5 +1,6 @@
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
+import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -28,34 +29,31 @@ def build_adjacency_matrix(df_long, k=3):
     return A, node_to_idx
 
 def build_tensor(df_long, node_to_idx, feature_cols):
-    """
-    Create Spatio-Temporal Tensor structure: (T_Time, N_Node, F_Feature)
-    """
-    times = sorted(df_long['Timestamp'].unique())
+    print("[+] Reindexing and interpolating missing data...")
+    min_time = df_long['Timestamp'].min()
+    max_time = df_long['Timestamp'].max()
+    full_times = pd.date_range(start=min_time, end=max_time, freq='15min')
     nodes = list(node_to_idx.keys())
 
-    T = len(times)
+    multi_idx = pd.MultiIndex.from_product([full_times, nodes], names=['Timestamp', 'SCATS_ID'])
+
+    df_indexed = df_long.set_index(['Timestamp', 'SCATS_ID'])[feature_cols]
+    df_full = df_indexed.reindex(multi_idx)
+
+    # Interpolate empty cells to avoid breaking the time series of LSTM
+    df_full = df_full.groupby(level='SCATS_ID', group_keys=False).apply(
+        lambda group: group.interpolate(method='linear', limit_direction='both')
+    )
+    df_full = df_full.fillna(0) # Backup for stations that are completely NaN
+
+    T = len(full_times)
     N = len(nodes)
     F = len(feature_cols)
-
-    tensor = np.zeros((T, N, F))
-    
-    # Optimize traversal time by group / pivot fast
-    df_indexed = df_long.set_index(['Timestamp', 'SCATS_ID'])[feature_cols]
-    
-    for t_idx, t in enumerate(times):
-        try:
-            # Get data at time t for all nodes
-            df_t = df_indexed.loc[t]
-            for node in df_t.index:
-                n_idx = node_to_idx[node]
-                tensor[t_idx, n_idx, :] = df_t.loc[node].values
-        except KeyError:
-            continue
-            
+ 
+    tensor = df_full.values.reshape((T, N, F))
     return tensor
 
-def create_st_sequences(tensor, seq_len=96):
+def create_st_sequences(tensor, seq_len=12):
     """
     Create sliding window sequences advancing by TIME FRAME on ALL stations.
     Input: tensor (T, N, F)
