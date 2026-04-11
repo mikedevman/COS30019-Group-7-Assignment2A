@@ -1,13 +1,14 @@
 import os
 import copy
+from pathlib import Path
 import torch
 import torch.nn as nn
 import numpy as np
-import pandas as pd
-import random
 import networkx as nx
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from sklearn.metrics import r2_score, mean_absolute_error, mean_squared_error
+
 from data_preproc_custom import (
     load_data,
     reshape_data_sum,
@@ -176,17 +177,37 @@ def visualize_spatial_graph(A, node_to_idx, df_long):
     plt.axis("on")
     plt.show()
 
+def mean_absolute_percentage_error(y_true, y_pred):
+    """Tính MAPE, bỏ qua các giá trị thực tế < 1 để tránh lỗi Floating Point cận 0"""
+    y_true, y_pred = np.array(y_true).flatten(), np.array(y_pred).flatten()
+    
+    # Chỉ tính MAPE cho những thời điểm thực tế có từ 1 xe trở lên
+    valid_idx = y_true >= 1.0 
+    
+    return np.mean(np.abs((y_true[valid_idx] - y_pred[valid_idx]) / y_true[valid_idx])) * 100
 
 def train_model():
     print("1. Đang tải và tiền xử lý dữ liệu...")
 
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    data_path = os.path.join(script_dir, "..", "data.csv")
+    script_dir = Path(__file__).resolve().parent
+    candidate_paths = [
+        script_dir / ".." / "data" / "SCATS_data.csv",
+        script_dir / ".." / "data.csv",
+        script_dir / ".." / ".." / "data.csv",
+    ]
 
-    try:
-        data = load_data(data_path)
-    except Exception:
-        data = load_data("../data.csv")
+    data = None
+    for candidate_path in candidate_paths:
+        if candidate_path.exists():
+            data = load_data(str(candidate_path))
+            break
+
+    if data is None:
+        searched_paths = "\n".join(f"- {path}" for path in candidate_paths)
+        raise FileNotFoundError(
+            "Không tìm thấy file dữ liệu SCATS_data.csv/data.csv. Đã thử các đường dẫn:\n"
+            f"{searched_paths}"
+        )
 
     df_long = reshape_data_sum(data)
 
@@ -213,26 +234,34 @@ def train_model():
         "traffic_lag_4",
         "traffic_lag_96",
     ]
-    x_feature_cols = [c for c in feature_cols if c != "Traffic_Volume"]
     num_features = len(feature_cols)
 
-    print("\n3. Chuẩn hóa: scaler_y (Traffic_Volume) và scaler_X (đặc trưng) tách biệt")
-    scaler_y = MinMaxScaler(feature_range=(0, 1))
-    scaler_x = MinMaxScaler(feature_range=(0, 1))
-
-    df_long["Traffic_Volume_Original"] = df_long["Traffic_Volume"].copy()
-
-    scaler_y.fit(df_long[["Traffic_Volume"]])
-    df_long["Traffic_Volume"] = scaler_y.transform(df_long[["Traffic_Volume"]]).ravel()
-
-    scaler_x.fit(df_long[x_feature_cols])
-    df_long[x_feature_cols] = scaler_x.transform(df_long[x_feature_cols])
-
-    print("4. Đang tạo cấu trúc khối Tensor Không-Thời Gian (T, N, F)...")
+    print("\n3. Đang xây dựng Tensor gốc (chưa scale)...")
     tensor = build_tensor(df_long, node_to_idx, feature_cols)
+    T, N, F = tensor.shape
     print(f"   => Kích thước Tensor (Time(T), Nodes(N), Features(F)): {tensor.shape}")
 
-    seq_length = 96
+    print("4. Chuẩn hóa Data (Per-Node Scaling - Tối quan trọng cho GCN)...")
+    train_time_end = int(T * 0.7)
+
+    # 1. Scaler cho Y (Cột 0: Traffic Volume) - Fit ĐỘC LẬP cho N trạm
+    scaler_y = MinMaxScaler(feature_range=(0, 1))
+    # Slice có dạng (T_train, N). Bỏ reshape(-1, 1). 
+    # Scaler sẽ tự động tạo ra N bộ Min/Max cho N trạm.
+    scaler_y.fit(tensor[:train_time_end, :, 0]) 
+    
+    tensor[:, :, 0] = scaler_y.transform(tensor[:, :, 0])
+
+    # 2. Scaler cho X (Từ cột 1 trở đi) - Đặc biệt quan trọng vì chứa các cột Lag
+    scaler_x = StandardScaler()
+    # Reshape thành ma trận 2D: (T_train, N * (F-1)) để tính Min/Max riêng cho TỪNG TÍNH NĂNG của TỪNG TRẠM
+    train_x_slice = tensor[:train_time_end, :, 1:].reshape(train_time_end, -1)
+    scaler_x.fit(train_x_slice)
+
+    # Transform toàn bộ tensor và reshape trả lại không gian 3D
+    tensor[:, :, 1:] = scaler_x.transform(tensor[:, :, 1:].reshape(T, -1)).reshape(T, N, F - 1)
+
+    seq_length = 12
     print(f"5. Cắt Sliding Window (Seq = {seq_length})...")
     X, y = create_st_sequences(tensor, seq_len=seq_length)
 
@@ -250,7 +279,7 @@ def train_model():
 
     hidden_dim = 64
     lstm_hidden = 128
-    dropout_p = 0.35
+    dropout_p = 0.1
     model = GCN_LSTM(
         A,
         num_nodes=num_nodes,
@@ -267,11 +296,13 @@ def train_model():
     y_train_t = torch.tensor(y_train, dtype=torch.float32).to(device)
     X_val_t = torch.tensor(X_val, dtype=torch.float32).to(device)
     y_val_t = torch.tensor(y_val, dtype=torch.float32).to(device)
+    X_test_t = torch.tensor(X_test, dtype=torch.float32).to(device)
+    y_test_t = torch.tensor(y_test, dtype=torch.float32).to(device)
 
     epochs = 50
     print(f"8. Bắt đầu quá trình Loop Huấn luyện {epochs} Epochs Tích hợp Early Stopping...")
 
-    batch_size = 32
+    batch_size = 64
     train_dataset = torch.utils.data.TensorDataset(X_train_t, y_train_t)
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
@@ -280,21 +311,14 @@ def train_model():
 
     early_stopper = EarlyStopping(patience=8, min_delta=0.0001)
 
-    # Chỉ predict 1 location (1 node) nhưng vẫn dùng GCN để lấy thông tin từ các node lân cận (KNN k-hop).
-    # Bạn có thể đổi chỉ số này nếu muốn dự báo trạm khác.
-    target_node_idx = 0
-    if target_node_idx >= num_nodes:
-        raise ValueError(f"target_node_idx={target_node_idx} vượt num_nodes={num_nodes}")
-
     for epoch in range(epochs):
         model.train()
         total_loss = 0
 
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
-            pred = model(batch_x, target_idx=target_node_idx)  # (batch,)
-            target = batch_y[:, target_node_idx]  # (batch,)
-            loss = loss_fn(pred, target)
+            pred = model(batch_x)  # (batch, nodes)
+            loss = loss_fn(pred, batch_y)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -303,9 +327,8 @@ def train_model():
 
         model.eval()
         with torch.no_grad():
-            val_pred = model(X_val_t, target_idx=target_node_idx)  # (val_batch,)
-            val_target = y_val_t[:, target_node_idx]  # (val_batch,)
-            epoch_val_loss = loss_fn(val_pred, val_target).item()
+            val_pred = model(X_val_t)
+            epoch_val_loss = loss_fn(val_pred, y_val_t).item()
 
         train_losses.append(epoch_train_loss)
         val_losses.append(epoch_val_loss)
@@ -337,28 +360,36 @@ def train_model():
     print("\n10. Evaluation với Test Set & Forecasting Visualization...")
     model.eval()
     with torch.no_grad():
-        test_pred_scaled = model(
-            torch.tensor(X_test, dtype=torch.float32).to(device),
-            target_idx=target_node_idx,
-        ).cpu().numpy()  # (samples,)
+        test_pred_scaled = model(X_test_t).cpu().numpy()
 
-    y_test_target_scaled = y_test[:, target_node_idx]  # (samples,)
+    y_test_scaled = y_test_t.cpu().numpy()
+    
+    # KHÔNG CẦN reshape(-1, 1) nữa, trực tiếp đưa ma trận (batch, N) vào
+    y_test_denorm = scaler_y.inverse_transform(y_test_scaled)
+    test_pred_denorm = scaler_y.inverse_transform(test_pred_scaled)
 
-    y_test_denorm = scaler_y.inverse_transform(y_test_target_scaled.reshape(-1, 1)).flatten()
-    test_pred_denorm = scaler_y.inverse_transform(test_pred_scaled.reshape(-1, 1)).flatten()
+    test_pred_denorm = np.maximum(test_pred_denorm, 0)
 
-    test_mse = np.mean((y_test_denorm - test_pred_denorm) ** 2)
-    test_rmse = np.sqrt(test_mse)
-    print(f"   => Test MSE (thang đo gốc — xe/15 phút) @ node {target_node_idx}: {test_mse:.4f}")
-    print(f"   => Test RMSE (thang đo gốc — xe/15 phút) @ node {target_node_idx}: {test_rmse:.4f}")
+    # Flatten để tính toán metrics toàn cục
+    y_true_flat = y_test_denorm.reshape(-1)
+    y_pred_flat = test_pred_denorm.reshape(-1)
+    test_mape = mean_absolute_percentage_error(y_true_flat, y_pred_flat)
+    test_r2 = r2_score(y_true_flat, y_pred_flat)
+    test_mae = mean_absolute_error(y_true_flat, y_pred_flat)
+    test_rmse = np.sqrt(mean_squared_error(y_true_flat, y_pred_flat))
+
+    print(f"   => Test MAE: Lệch trung bình {test_mae:.2f} xe / 15 phút")
+    print(f"   => Test RMSE: {test_rmse:.2f}")
+    print(f"   => Test MAPE (toàn bộ nodes, thang đo gốc): {test_mape:.4f}%")
+    print(f"   => Test R^2 (toàn bộ nodes, thang đo gốc): {test_r2:.4f}")
 
     nodes_list = list(node_to_idx.keys())
-    node_id = nodes_list[target_node_idx]
+    node_id = nodes_list[0]
 
     plt.figure(figsize=(15, 6))
-    plt.plot(y_test_denorm[:500], label="Thực tế (Ground Truth)", color="blue")
-    plt.plot(test_pred_denorm[:500], label="GCN-LSTM (1 location)", color="red", alpha=0.7)
-    plt.title(f"GCN-LSTM: Dự báo tại SCATS_ID {node_id} (1 node)")
+    plt.plot(y_test_denorm[:500, 0], label="Thực tế (Node 0)", color="blue")
+    plt.plot(test_pred_denorm[:500, 0], label="GCN-LSTM (Node 0)", color="red", alpha=0.7)
+    plt.title(f"GCN-LSTM: Dự báo tại SCATS_ID {node_id}")
     plt.xlabel("Bước (15 phút) trong Test")
     plt.ylabel("Lưu lượng")
     plt.legend()

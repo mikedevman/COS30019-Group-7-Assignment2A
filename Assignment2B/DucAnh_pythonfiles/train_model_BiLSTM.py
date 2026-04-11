@@ -58,8 +58,8 @@ def main():
     # Scale tất cả các features đang có
     df_long[feature_cols] = scaler_x.fit_transform(df_long[feature_cols])
     
-    # Cửa sổ trượt (Time Steps = 96 tương đương dữ liệu ngày trước đoán ngày sau)
-    sequence_length = 96
+    # Cửa sổ trượt
+    sequence_length = 5
     print(f"3 & 4. Đang tạo Sequences và chẻ Dataset (Time steps = {sequence_length})...")
     X_train, y_train, X_val, y_val, X_test, y_test = create_lstm_sequences(df_long, seq_length=sequence_length, train_ratio=0.7, val_ratio=0.15)
     
@@ -68,7 +68,7 @@ def main():
     print(f"X_test size: {X_test.shape}")
     
     print("\n5. Compile và Train BiLSTM...")
-    # shape cho input là (time_steps, features) cụ thể là (96, 6)
+    # shape cho input là (time_steps, features) cụ thể là (5, 6)
     model = build_bilstm_model((X_train.shape[1], X_train.shape[2]))
     model.summary()
     
