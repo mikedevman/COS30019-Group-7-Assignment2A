@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.metrics import r2_score
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import GRU, Dense, Dropout
 from tensorflow.keras.callbacks import EarlyStopping
@@ -33,6 +34,14 @@ def build_gru_model(input_shape):
     
     return model
 
+
+def mean_absolute_percentage_error(y_true, y_pred):
+    """Tính MAPE, bỏ qua điểm có y_true = 0 để tránh chia cho 0."""
+    y_true = np.array(y_true).flatten()
+    y_pred = np.array(y_pred).flatten()
+    non_zero_idx = y_true != 0
+    return np.mean(np.abs((y_true[non_zero_idx] - y_pred[non_zero_idx]) / y_true[non_zero_idx])) * 100
+
 def main():
     print("1. Đang tải và tiền xử lý dữ liệu...")
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -58,7 +67,7 @@ def main():
     df_long[feature_cols] = scaler_x.fit_transform(df_long[feature_cols])
     
     # Cửa sổ trượt (Time Steps = 96 tương đương dữ liệu ngày trước đoán ngày sau)
-    sequence_length = 5
+    sequence_length = 12
     print(f"3 & 4. Đang tạo Sequences và chẻ Dataset (Time steps = {sequence_length})...")
     X_train, y_train, X_val, y_val, X_test, y_test = create_lstm_sequences(df_long, seq_length=sequence_length, train_ratio=0.7, val_ratio=0.15)
     
@@ -104,6 +113,11 @@ def main():
     # Bấm ngược lại scale ra số thật
     predictions_denorm = scaler_y.inverse_transform(predictions)
     y_test_denorm = scaler_y.inverse_transform(y_test.reshape(-1, 1))
+
+    test_mape = mean_absolute_percentage_error(y_test_denorm, predictions_denorm)
+    test_r2 = r2_score(y_test_denorm.flatten(), predictions_denorm.flatten())
+    print(f"Test MAPE (%): {test_mape:.4f}")
+    print(f"Test R^2: {test_r2:.4f}")
     
     # Vẽ vài khung so sánh kết quả prediction vs thực tế
     plt.figure(figsize=(15, 6))
