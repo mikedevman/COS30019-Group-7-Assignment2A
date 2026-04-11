@@ -167,7 +167,7 @@ def build_tensor(df_long, node_to_idx, feature_cols):
             
     return tensor
 
-def create_st_sequences(tensor, seq_len=96):
+def create_st_sequences(tensor, seq_len=5):
     """
     Tạo cửa sổ trượt tịnh tiến theo KHUNG THỜI GIAN trên TẤT CẢ các trạm.
     Đầu vào: tensor (T, N, F)
@@ -241,7 +241,7 @@ if __name__ == "__main__":
     print(df_long.head())
     print(f"Hình dạng dữ liệu sau biến đổi: {df_long.shape}")
     
-    # sequence_length = 96 
+    # sequence_length = 5
     
     # Phục vụ để code cũ tránh báo lỗi (vì Test Main Script cũ bị xóa create_lstm_sequences)
     print("Vui lòng kích hoạt script train_gcn_lstm.py để kiểm tra module đồ thị (Graph Convolution)...")

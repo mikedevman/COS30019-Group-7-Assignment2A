@@ -78,7 +78,7 @@ def reshape_data_sum(df):
     
     return df_long
 
-def create_lstm_sequences(df_long, seq_length=96, train_ratio=0.7, val_ratio=0.15):
+def create_lstm_sequences(df_long, seq_length=5, train_ratio=0.7, val_ratio=0.15):
     """
     Tạo dữ liệu sliding window cho mô hình LSTM/GRU.
     Đồng thời chia tập Train/Val/Test theo thời gian cho TỪNG trạm để mô hình
@@ -191,7 +191,7 @@ if __name__ == "__main__":
     
     # 2 & 3. Tạo dữ liệu sliding window (LSTM/GRU) theo từng nhóm và chia tập
     # Tham số cấu hình: seq_length = 96 (dữ liệu một ngày cho chuỗi 15 phút = 24 * 4)
-    sequence_length = 96 
+    sequence_length = 5 
     print(f"\n2 & 3 & 4. Đang tạo dữ liệu Sliding Window và chia Train/Val/Test (seq_length/time steps = {sequence_length})...")
     X_train, y_train, X_val, y_val, X_test, y_test = create_lstm_sequences(df_long, seq_length=sequence_length, train_ratio=0.7, val_ratio=0.15)
     
