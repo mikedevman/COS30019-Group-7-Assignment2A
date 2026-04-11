@@ -140,34 +140,31 @@ def build_adjacency_matrix(df_long, k=3):
     return A, node_to_idx
 
 def build_tensor(df_long, node_to_idx, feature_cols):
-    """
-    Tạo cấu trúc Tensor Không - Thời gian: (T_Time, N_Node, F_Feature)
-    """
-    times = sorted(df_long['Timestamp'].unique())
+    print("      [+] Đang Reindex và nội suy dữ liệu rỗng...")
+    min_time = df_long['Timestamp'].min()
+    max_time = df_long['Timestamp'].max()
+    full_times = pd.date_range(start=min_time, end=max_time, freq='15min')
     nodes = list(node_to_idx.keys())
-
-    T = len(times)
+    
+    multi_idx = pd.MultiIndex.from_product([full_times, nodes], names=['Timestamp', 'SCATS_ID'])
+    
+    df_indexed = df_long.set_index(['Timestamp', 'SCATS_ID'])[feature_cols]
+    df_full = df_indexed.reindex(multi_idx)
+    
+    # Nội suy các ô trống (Interpolation) để không bị đứt gãy chuỗi thời gian của LSTM
+    df_full = df_full.groupby(level='SCATS_ID', group_keys=False).apply(
+        lambda group: group.interpolate(method='linear', limit_direction='both')
+    )
+    df_full = df_full.fillna(0) # Backup cho những trạm NaN hoàn toàn
+    
+    T = len(full_times)
     N = len(nodes)
     F = len(feature_cols)
-
-    tensor = np.zeros((T, N, F))
     
-    # Tối ưu thời gian duyệt bằng cách group / pivot nhanh
-    df_indexed = df_long.set_index(['Timestamp', 'SCATS_ID'])[feature_cols]
-    
-    for t_idx, t in enumerate(times):
-        try:
-            # Lấy data tại mốc t cho toàn bộ các node
-            df_t = df_indexed.loc[t]
-            for node in df_t.index:
-                n_idx = node_to_idx[node]
-                tensor[t_idx, n_idx, :] = df_t.loc[node].values
-        except KeyError:
-            continue
-            
+    tensor = df_full.values.reshape((T, N, F))
     return tensor
 
-def create_st_sequences(tensor, seq_len=5):
+def create_st_sequences(tensor, seq_len=12):
     """
     Tạo cửa sổ trượt tịnh tiến theo KHUNG THỜI GIAN trên TẤT CẢ các trạm.
     Đầu vào: tensor (T, N, F)
@@ -241,7 +238,7 @@ if __name__ == "__main__":
     print(df_long.head())
     print(f"Hình dạng dữ liệu sau biến đổi: {df_long.shape}")
     
-    # sequence_length = 5
+    # sequence_length = 8
     
     # Phục vụ để code cũ tránh báo lỗi (vì Test Main Script cũ bị xóa create_lstm_sequences)
     print("Vui lòng kích hoạt script train_gcn_lstm.py để kiểm tra module đồ thị (Graph Convolution)...")
