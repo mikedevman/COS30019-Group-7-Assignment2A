@@ -46,7 +46,7 @@ async function fetchRoadPath(coords) {
   return data.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
 }
 
-export default function MapView({ routes = [], origin, destination, selectedRoute, onSelectRoute }) {
+export default function MapView({ routes = [], origin, destination, selectedRoute, onSelectRoute, loading = false }) {
   // Track marker selection and resolved road geometries for each route
   const [activeMarker, setActiveMarker] = useState(null);
   const [roadPaths, setRoadPaths] = useState([]);
@@ -58,7 +58,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
 
   useEffect(() => {
     // Recompute road geometry paths whenever the route list changes
-    if (!routes.length) {
+    if (!routes.length || loading) {
       setRoadPaths([]);
       return;
     }
@@ -67,7 +67,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
         fetchRoadPath(r.path.map(id => siteLatlng(id)).filter(Boolean))
       )
     ).then(setRoadPaths);
-  }, [routes]);
+  }, [routes, loading]);
 
   return (
     <div className="map-wrap">
@@ -98,7 +98,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
               positions={path}
               pathOptions={{
                 color: ROUTE_COLORS[i % ROUTE_COLORS.length],
-                opacity: isSelected ? 0.85 : 0.25,
+                opacity: isSelected ? 0.99 : 0.1,
                 weight: selectedRoute === route.id ? 5 : 3,
               }}
               eventHandlers={{
@@ -109,7 +109,7 @@ export default function MapView({ routes = [], origin, destination, selectedRout
         })}
 
         {/* Markers */}
-        {SCATS_SITES.map(site => {
+        {!loading && SCATS_SITES.map(site => {
           const isOrigin = site.id === origin;
           const isDest = site.id === destination;
 

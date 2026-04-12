@@ -110,6 +110,7 @@ export default function RouteFinder() {
             destination={destination}
             selectedRoute={selectedRoute}
             onSelectRoute={setSelectedRoute}
+            loading={loading}
           />
           {!searched && (
             // Onboarding hint shown until the first search is performed
