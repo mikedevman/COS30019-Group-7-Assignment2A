@@ -55,7 +55,8 @@ To run the notebooks directly in **VS Code**:
 - Open any `.ipynb` file in the `notebooks/` directory.
 - Click **Run All** to execute the cells (this will prompt you to select a kernel).
 ![run all cells](md_images/run_all_cells.png)
-- Choose **Python 3.11 (TBRGS)** from the kernel selection popup.
+- Choose **Python 3.11** (or newer versions) from the kernel selection popup.
+
    *Note: Ensure you run all cells in both `data_preprocessing.ipynb` and `data_preprocessing_custom_gcn_lstm.ipynb` to generate the necessary model input data.*
 
 ---
