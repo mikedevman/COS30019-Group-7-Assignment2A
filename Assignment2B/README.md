@@ -49,24 +49,13 @@ The GUI provides the interactive map interface.
    npm install
    ```
 
-### 5. Notebook Setup (Data Preprocessing & Model Training)
+### 5. Jupyter Notebook Setup (Data Preprocessing & Model Training)
 To run the notebooks directly in **VS Code**:
 
-1. **Install Dependencies**:
-   ```bash
-   pip install ipykernel
-   ```
-2. **Register the Environment**:
-   ```bash
-   python -m ipykernel install --user --name=tbrgs-venv --display-name "Python 3.11 (TBRGS)"
-   ```
-3. **Run in VS Code**:
-   - Open any `.ipynb` file in the `notebooks/` directory.
-   - Click **Select Kernel** at the top right and choose **Python 3.11**.
-   - Click **Run All** to execute the cells.
-
-   ![run all cells](md_images/run_all_cells.png)
-
+- Open any `.ipynb` file in the `notebooks/` directory.
+- Click **Run All** to execute the cells (this will prompt you to select a kernel).
+![run all cells](md_images/run_all_cells.png)
+- Choose **Python 3.11 (TBRGS)** from the kernel selection popup.
    *Note: Ensure you run all cells in both `data_preprocessing.ipynb` and `data_preprocessing_custom_gcn_lstm.ipynb` to generate the necessary model input data.*
 
 ---
